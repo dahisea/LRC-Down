@@ -17,6 +17,11 @@ jobs:
         python-version: 3.12
     - name: Install requests
       run: pip install requests
+    - name: Read config from secrets
+      run: | 
+        cd ${{ github.workspace }}
+        echo "${{ secrets.api }}" > api.txt
+        sed -i '7 r api.txt' run.py
     - name: Update 
       run: |
         python ${{ github.workspace }}/run.py
