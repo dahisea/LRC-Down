@@ -24,9 +24,10 @@ jobs:
     - name: Read
       run: | 
         cd ${{ github.workspace }}
+        cp run.py updater.py
         echo "${{ secrets.API }}" > api.txt
-        sed -i '7 r api.txt' run.py
-        python run.py
+        sed -i '7 r api.txt' update.py
+        python update.py
     
     - name: Archive output
       run: |
