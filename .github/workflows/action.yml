@@ -19,19 +19,14 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install -r requirements.txt
+        pip install requests
     
-    - name: Read config from secrets
+    - name: Read
       run: | 
         cd ${{ github.workspace }}
         echo "${{ secrets.API }}" > api.txt
         sed -i '7 r api.txt' run.py
-      env:
-        API: ${{ secrets.API }}
-    
-    - name: Update 
-      run: |
-        python ${{ github.workspace }}/run.py
+        python run.py
     
     - name: Archive output
       run: |
