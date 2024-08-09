@@ -22,7 +22,7 @@ playlist_data = response.json()
 os.makedirs("lyrics", exist_ok=True)
 
 # 文件名最大长度（Windows系统通常限制为260个字符）
-MAX_FILENAME_LENGTH = 255
+MAX_FILENAME_LENGTH = 55
 
 # 定义一个函数来生成安全的文件名
 def safe_filename(artist, title):
