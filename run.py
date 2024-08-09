@@ -2,6 +2,7 @@ import requests
 import re
 import os
 import time
+import hashlib
 
 
 
@@ -23,6 +24,19 @@ os.makedirs("lyrics", exist_ok=True)
 # 文件名最大长度（Windows系统通常限制为260个字符）
 MAX_FILENAME_LENGTH = 255
 
+# 定义一个函数来生成安全的文件名
+def safe_filename(artist, title):
+    # 初始文件名
+    filename = f"{artist} - {title}.lrc"
+    
+    # 如果文件名长度过长，则生成一个hash并缩短文件名
+    if len(filename) > MAX_FILENAME_LENGTH - len("lyrics/"):
+        hash_obj = hashlib.md5(filename.encode('utf-8'))
+        hash_str = hash_obj.hexdigest()
+        filename = f"{hash_str}.lrc"
+    
+    return f"lyrics/{filename}"
+
 # 遍历播放列表中的每首歌
 for song in playlist_data:
     # 获取艺术家和歌曲名
@@ -36,13 +50,8 @@ for song in playlist_data:
     lyrics_response = requests.get(lyrics_url, headers=headers)
     lyrics = lyrics_response.text
     
-    # 定义初始歌词文件名
-    filename = f"lyrics/{artist} - {title}.lrc"
-    
-    # 如果文件名长度超过限制，则缩短艺术家名称
-    while len(filename) > MAX_FILENAME_LENGTH:
-        artist = artist[:-1]  # 每次删除艺术家名称的最后一个字符
-        filename = f"lyrics/{artist} - {title}.lrc"
+    # 使用安全的文件名
+    filename = safe_filename(artist, title)
     
     # 保存歌词到文件
     with open(filename, 'w', encoding='utf-8') as file:
