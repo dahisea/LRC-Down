@@ -20,7 +20,7 @@ jobs:
     - name: Read config from secrets
       run: | 
         cd ${{ github.workspace }}
-        echo "${{ secrets.api }}" > api.txt
+        echo "${{ secrets.API }}" > api.txt
         sed -i '7 r api.txt' run.py
     - name: Update 
       run: |
