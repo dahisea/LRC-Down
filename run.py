@@ -8,7 +8,16 @@ api_url =
 
 # 获取播放列表数据
 response = requests.get(api_url)
-playlist_data = response.json()
+
+# 打印响应状态码和内容以进行调试
+print(f"Response Status Code: {response.status_code}")
+print(f"Response Text: {response.text}")
+
+try:
+    playlist_data = response.json()
+except requests.exceptions.JSONDecodeError as e:
+    print(f"JSONDecodeError: {e}")
+    playlist_data = []
 
 # 创建保存歌词文件的目录
 os.makedirs("lyrics", exist_ok=True)
