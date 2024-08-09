@@ -22,12 +22,11 @@ jobs:
         pip install requests
     
     - name: Read
-      run: | 
-        cd ${{ github.workspace }}
-        cp run.py updater.py
+      run: |
+        cp ${{ github.workspace }}/run.py ${{ github.workspace }}/updater.py
         echo "${{ secrets.API }}" > api.txt
-        sed -i '7 r api.txt' update.py
-        python update.py
+        sed -i '7 r api.txt' ${{ github.workspace }}/update.py
+        python ${{ github.workspace }}/update.py
     
     - name: Archive output
       run: |
