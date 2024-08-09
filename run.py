@@ -8,24 +8,24 @@ import hashlib
 
 
 
-# カスタムリクエストヘッダー
+
 headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
     "Accept": "application/json",
     "Accept-Language": "en-US,en;q=0.9",
 }
 
-# プレイリストデータの取得
+# 获取播放列表数据
 response = requests.get(api_url, headers=headers)
 playlist_data = response.json()
 
-# 歌詞ファイルを保存するディレクトリを作成
+# 创建保存歌词文件的目录
 os.makedirs("lyrics", exist_ok=True)
 
-# ファイル名の最大長（Windowsシステムでは通常260文字に制限されています）
+# 文件名最大长度（Windows系统通常限制为260个字符）
 MAX_FILENAME_LENGTH = 100
 
-# 安全なファイル名を生成する関数
+# 生成安全的文件名
 def safe_filename(artist, title):
     filename = f"{artist} - {title}.lrc"
     if len(filename) > MAX_FILENAME_LENGTH - len("lyrics/"):
@@ -34,23 +34,23 @@ def safe_filename(artist, title):
         filename = f"{hash_str}.lrc"
     return f"lyrics/{filename}"
 
-# 無効な歌詞行を削除し、作曲情報を除去し、タイムスタンプの小数点をコロンに置き換え、ミリ秒部分を2桁に保つ
+# 清理并格式化歌词，删除无效的歌词行和作曲信息，替换时间戳的小数点为冒号，保留毫秒部分的2位数
 def clean_and_format_lyrics(lyrics):
-    # 作曲情報を削除する
+    # 删除作曲信息
     lyrics = re.sub(r'^\[\d{2}:\d{2}.\d{3}\] *[作词|作曲|编曲|制作人] *:.*$', '', lyrics, flags=re.MULTILINE)
     
-    # タイムスタンプの小数点をコロンに置き換え、ミリ秒部分の最初の2桁を保持
+    # 替换时间戳的小数点为冒号，保留毫秒部分的前两位
     formatted_lyrics = re.sub(r'(\d{2}:\d{2})\.(\d{3})', lambda m: f"{m.group(1)}:{m.group(2)[:2]}", lyrics)
     
-    # 「[時間] 空行」の無効な行を削除
+    # 删除无效的“[时间] 空行”行
     cleaned_lyrics = re.sub(r'^\[\d{2}:\d{2}:\d{2}\]\s*$', '', formatted_lyrics, flags=re.MULTILINE)
     
-    # 連続する余分な空行を削除
+    # 删除连续的多余空行
     cleaned_lyrics = re.sub(r'\n+', '\n', cleaned_lyrics)
     
     return cleaned_lyrics.strip()
 
-# プレイリスト内の各曲を処理
+# 处理播放列表中的每首歌
 for song in playlist_data:
     artist = re.sub(r' ?/ ?', ' ', song['author'])
     title = re.sub(r' ?/ ?', ' ', song['title'])
@@ -58,12 +58,12 @@ for song in playlist_data:
     lyrics_response = requests.get(lyrics_url, headers=headers)
     lyrics = lyrics_response.text
 
-    # 歌詞に「純音楽、お楽しみください」が含まれているか確認
-    if "純音楽、お楽しみください" not in lyrics:
+    # 检查歌词中是否包含“纯音乐，请欣赏”
+    if "纯音乐，请欣赏" not in lyrics:
         cleaned_lyrics = clean_and_format_lyrics(lyrics)
         filename = safe_filename(artist, title)
         with open(filename, 'w', encoding='utf-8') as file:
             file.write(cleaned_lyrics)
         time.sleep(1)
 
-print("歌詞は正常にダウンロードされ、保存されました。")
+print("歌词已成功下载并保存。")
