@@ -28,7 +28,6 @@ for song in playlist_data:
     try:
         # アーティスト名と曲名を取得
         artist = re.sub(r'[ / ]', ' ', song['author'])
-        title = re.sub(r'[ / ]', ' ', song['title'])
         
         # 歌詞URLを取得
         lyrics_url = song['lrc']
