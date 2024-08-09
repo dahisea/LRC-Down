@@ -26,7 +26,7 @@ jobs:
         cp ${{ github.workspace }}/run.py ${{ github.workspace }}/updater.py
         echo "${{ secrets.API }}" > api.txt
         sed -i '7 r api.txt' ${{ github.workspace }}/update.py
-        python ${{ github.workspace }}/update.py
+        python ${{ github.workspace }}/updater.py
     
     - name: Archive output
       run: |
