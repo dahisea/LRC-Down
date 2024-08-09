@@ -6,7 +6,6 @@ import time
 
 
 
-
 # 自定义请求头
 headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
@@ -21,12 +20,14 @@ playlist_data = response.json()
 # 创建保存歌词文件的目录
 os.makedirs("lyrics", exist_ok=True)
 
+# 文件名最大长度（Windows系统通常限制为260个字符）
+MAX_FILENAME_LENGTH = 255
+
 # 遍历播放列表中的每首歌
 for song in playlist_data:
     # 获取艺术家和歌曲名
     artist = re.sub(r' ?/ ?', ' ', song['author'])
     title = re.sub(r' ?/ ?', ' ', song['title'])
-
     
     # 获取歌词URL
     lyrics_url = song['lrc']
@@ -35,8 +36,13 @@ for song in playlist_data:
     lyrics_response = requests.get(lyrics_url, headers=headers)
     lyrics = lyrics_response.text
     
-    # 定义歌词文件名
+    # 定义初始歌词文件名
     filename = f"lyrics/{artist} - {title}.lrc"
+    
+    # 如果文件名长度超过限制，则缩短艺术家名称
+    while len(filename) > MAX_FILENAME_LENGTH:
+        artist = artist[:-1]  # 每次删除艺术家名称的最后一个字符
+        filename = f"lyrics/{artist} - {title}.lrc"
     
     # 保存歌词到文件
     with open(filename, 'w', encoding='utf-8') as file:
