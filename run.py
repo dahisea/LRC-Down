@@ -1,6 +1,7 @@
 import requests
 import re
 import os
+import time  # 导入time模块
 
 # 定义API URL
 api_url = "https://api.i-meto.com/meting/api?server=netease&type=playlist&id=6632256805"
@@ -31,5 +32,8 @@ for song in playlist_data:
     # 保存歌词到文件
     with open(filename, 'w', encoding='utf-8') as file:
         file.write(lyrics)
+    
+    # 增加时间间隔1秒
+    time.sleep(1)
 
 print("歌词已成功下载并保存。")
