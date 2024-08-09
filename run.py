@@ -4,7 +4,6 @@ import os
 import time
 
 # 定义API URL
-api_url = "https://api.i-meto.com/meting/api?server=netease&type=playlist&id=6632256805"
 
 # 自定义请求头
 headers = {
