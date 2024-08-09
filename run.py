@@ -43,10 +43,10 @@ def safe_filename(artist, title):
         filename = f"{hash_str}.lrc"
     return f"lyrics/{filename}"
 
-# 清理并格式化歌词，删除无效的歌词行和作曲信息，替换时间戳的小数点为冒号，保留毫秒部分的2位数
+
 def clean_and_format_lyrics(lyrics):
     # 删除作曲信息
-    no_header_lyrics = re.sub(r'^\[\d{2}:\d{2}.\d{3}\] *[作词|作曲|编曲|制作人] *:.*$', '', lyrics, flags=re.MULTILINE)
+    no_header_lyrics = re.sub(r'^\[\d{2}:\d{2}.\d{3}\] *(作词|作曲|编曲|制作人|演唱|音乐|词曲|编曲|制作|填词|配器|编曲|演奏|作曲者|作词者|主唱|吉他手|鼓手|贝斯手|合成器|混音|录音|监制|录制) *:.*$', '', lyrics, flags=re.MULTILINE)
     
     # 替换时间戳的小数点为冒号，保留毫秒部分的前两位
     formatted_lyrics = re.sub(r'(\d{2}:\d{2})\.(\d{3})', lambda m: f"{m.group(1)}:{m.group(2)[:2]}", no_header_lyrics)
@@ -58,6 +58,7 @@ def clean_and_format_lyrics(lyrics):
     cleaned_lyrics = re.sub(r'\n+', '\n', cleaned_lyrics)
     
     return cleaned_lyrics.strip()
+
 
 # 处理播放列表中的每首歌
 for song in playlist_data:
