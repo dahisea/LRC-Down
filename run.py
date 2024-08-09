@@ -59,8 +59,8 @@ for song in playlist_data:
     lyrics_response = requests.get(lyrics_url, headers=headers)
     lyrics = lyrics_response.text
 
-    # 歌詞に「純音楽、お楽しみください」が含まれているか確認
-    if "純音楽、お楽しみください" not in lyrics:
+    # 歌詞に「純音楽」が含まれているか確認
+    if "纯音乐，请欣赏" not in lyrics:
         cleaned_lyrics = clean_and_format_lyrics(lyrics)
         filename = safe_filename(artist, title)
         with open(filename, 'w', encoding='utf-8') as file:
