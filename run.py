@@ -24,8 +24,9 @@ os.makedirs("lyrics", exist_ok=True)
 # 遍历播放列表中的每首歌
 for song in playlist_data:
     # 获取艺术家和歌曲名
-    artist = re.sub(r'[ / ]', ' ', song['author'])
-    title = re.sub(r'[ / ]', ' ', song['title'])
+    artist = re.sub(r' ?/ ?', ' ', song['author'])
+    title = re.sub(r' ?/ ?', ' ', song['title'])
+
     
     # 获取歌词URL
     lyrics_url = song['lrc']
