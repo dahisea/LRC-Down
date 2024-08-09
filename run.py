@@ -4,11 +4,15 @@ import os
 import time
 
 # API URLを定義
-api_url = 
+api_url = "YOUR_API_URL_HERE"
 
 # リクエストヘッダーを定義（User-Agentを含む）
 headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+    'Accept-Language': 'en-US,en;q=0.5',
+    'Connection': 'keep-alive',
+    'Upgrade-Insecure-Requests': '1'
 }
 
 try:
@@ -28,6 +32,7 @@ for song in playlist_data:
     try:
         # アーティスト名と曲名を取得
         artist = re.sub(r'[ / ]', ' ', song['author'])
+        title = re.sub(r'[ / ]', ' ', song['title'])
         
         # 歌詞URLを取得
         lyrics_url = song['lrc']
