@@ -4,7 +4,7 @@ import os
 import time
 
 # API URLを定義
-api_url = "YOUR_API_URL_HERE"
+api_url = 
 
 # リクエストヘッダーを定義（User-Agentを含む）
 headers = {
