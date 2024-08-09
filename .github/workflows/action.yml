@@ -20,7 +20,7 @@ jobs:
     - name: Update 
       run: |
         cd ${{ github.workspace }}
-        sed -e 7a\api_url="${{ secrets.api }}?server=netease&type=playlist&id=${{ secrets.playlist }}" run.py
+        sed -i 's/api_url = /&"${{ secrets.api }}?server=netease&type=playlist&id=${{ secrets.playlist }}"' run.py
         python ${{ github.workspace }}/run.py
     - name: Archive output
       run: |
