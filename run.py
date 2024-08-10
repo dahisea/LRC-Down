@@ -30,7 +30,7 @@ except requests.exceptions.RequestException as e:
 os.makedirs("lyrics", exist_ok=True)
 
 # 文件名最大长度（Windows系统通常限制为260个字符）
-MAX_FILENAME_LENGTH = 100
+MAX_FILENAME_LENGTH = 105
 
 # 生成安全的文件名
 def safe_filename(artist, title):
@@ -90,7 +90,7 @@ for song in playlist_data:
 
     # 检查歌词中是否包含“纯音乐，请欣赏”
     if "纯音乐，请欣赏" not in lyrics:
-        output_lyrics = final_lyrics(lyrics)
+        output_lyrics = clean_and_format_lyrics(lyrics)
         filename = safe_filename(artist, title)
         try:
             with open(filename, 'w', encoding='utf-8') as file:
