@@ -21,6 +21,13 @@ jobs:
       run: |
         pip install requests
     
+    - name: Configure Proxy
+      uses: Boostport/setup-cloudflare-warp@v1
+      with: 
+        organization: your-organization
+        auth_client_id: ${{ secrets.CLOUDFLARE_AUTH_CLIENT_ID }}
+        auth_client_secret: ${{ secrets.CLOUDFLARE_AUTH_CLIENT_SECRET }}
+
     - name: Read
       run: |
         cp ${{ github.workspace }}/run.py ${{ github.workspace }}/updater.py
