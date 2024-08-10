@@ -24,7 +24,7 @@ jobs:
     - name: Configure Proxy
       uses: Boostport/setup-cloudflare-warp@v1
       with: 
-        organization: your-organization
+        organization: ${{ secrets.CLOUDFLARE_ORGANIZATION }}
         auth_client_id: ${{ secrets.CLOUDFLARE_AUTH_CLIENT_ID }}
         auth_client_secret: ${{ secrets.CLOUDFLARE_AUTH_CLIENT_SECRET }}
 
