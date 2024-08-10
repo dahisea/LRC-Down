@@ -60,7 +60,7 @@ def clean_and_format_lyrics(lyrics):
     ]
 
     # 使用正则表达式删除关键词相关行
-    pattern = rf'^\[\d{{2}}:\d{{2}}.\d{{3}}\]( |)*({"|".join(keywords)})( |)*[:：].*$'
+    pattern = rf'^\[\d{{2}}:\d{{2}}.\d{{3}}\] ?*({"|".join(keywords)}) ?*(:|：).*$'
     no_header_lyrics = re.sub(pattern, '', lyrics, flags=re.MULTILINE)
     
     # 替换时间戳的小数点为冒号，保留毫秒部分的前两位
@@ -77,8 +77,8 @@ def clean_and_format_lyrics(lyrics):
 
 # 处理播放列表中的每首歌
 for song in playlist_data:
-    artist = re.sub(r' ?/ ?', ' ', song['author'])
-    title = re.sub(r' ?/ ?', ' ', song['title'])
+    artist = re.sub(r' ?/ ?', ' ', song.get('author', song.get('artist', '')))
+    title = re.sub(r' ?/ ?', ' ', song.get('title', song.get('name', '')))
     lyrics_url = song['lrc']
     try:
         lyrics_response = requests.get(lyrics_url, headers=headers)
