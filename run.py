@@ -60,7 +60,7 @@ def clean_and_format_lyrics(lyrics):
     ]
 
     # 使用正则表达式删除关键词相关行
-    pattern = rf'^\[\d{{2}}:\d{{2}}.\d{{3}}\] ?*({"|".join(keywords)}) ?*(:|：).*$'
+    pattern = r'^\[\d{{2}}:\d{{2}}.\d{{3}}\] ?*({"|".join(keywords)}) ?*(:|：).*$'
     no_header_lyrics = re.sub(pattern, '', lyrics, flags=re.MULTILINE)
     
     # 替换时间戳的小数点为冒号，保留毫秒部分的前两位
@@ -70,9 +70,9 @@ def clean_and_format_lyrics(lyrics):
     cleaned_lyrics = re.sub(r'^\[\d{2}:\d{2}:\d{2}\]\s*$', '', formatted_lyrics, flags=re.MULTILINE)
     
     # 删除连续的多余空行
-    cleaned_lyrics = re.sub(r'\n+', '\n', cleaned_lyrics)
+    final_lyrics = re.sub(r'\n+', '\n', cleaned_lyrics)
     
-    return cleaned_lyrics.strip()
+    return final_lyrics.strip()
 
 
 # 处理播放列表中的每首歌
@@ -90,11 +90,11 @@ for song in playlist_data:
 
     # 检查歌词中是否包含“纯音乐，请欣赏”
     if "纯音乐，请欣赏" not in lyrics:
-        cleaned_lyrics = clean_and_format_lyrics(lyrics)
+        output_lyrics = final_lyrics(lyrics)
         filename = safe_filename(artist, title)
         try:
             with open(filename, 'w', encoding='utf-8') as file:
-                file.write(cleaned_lyrics)
+                file.write(output_lyrics)
             logging.info(f"Lyrics for {title} by {artist} saved successfully.")
         except IOError as e:
             logging.error(f"Error saving lyrics for {title} by {artist}: {e}")
