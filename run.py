@@ -90,11 +90,11 @@ for song in playlist_data:
 
     # 检查歌词中是否包含“纯音乐，请欣赏”
     if "纯音乐，请欣赏" not in lyrics:
-        output_lyrics = clean_and_format_lyrics(lyrics)
+        final_lyrics = clean_and_format_lyrics(lyrics)
         filename = safe_filename(artist, title)
         try:
             with open(filename, 'w', encoding='utf-8') as file:
-                file.write(output_lyrics)
+                file.write(final_lyrics)
             logging.info(f"Lyrics for {title} by {artist} saved successfully.")
         except IOError as e:
             logging.error(f"Error saving lyrics for {title} by {artist}: {e}")
