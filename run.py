@@ -60,8 +60,7 @@ def clean_and_format_lyrics(lyrics):
     ]
 
     # 使用正则表达式删除关键词相关行
-    pattern = r'^\[\d{{2}}:\d{{2}}.\d{{3}}\] ?*({"|".join(keywords)}) ?*(:|：).*$'
-    no_header_lyrics = re.sub(pattern, '', lyrics, flags=re.MULTILINE)
+    no_header_lyrics = re.sub(r'^\[\d{{2}}:\d{{2}}.\d{{3}}\] ?*({"|".join(keywords)}) ?*(:|：).*$', '', lyrics, flags=re.MULTILINE)
     
     # 替换时间戳的小数点为冒号，保留毫秒部分的前两位
     formatted_lyrics = re.sub(r'(\d{2}:\d{2})\.(\d{3})', lambda m: f"{m.group(1)}:{m.group(2)[:2]}", no_header_lyrics)
