@@ -58,13 +58,9 @@ def clean_and_format_lyrics(lyrics):
         "录音现场指导 Scoring Sessions Director"
     ]
 
-    # 使用正则表达式删除关键词相关行
-    try:
+    # 使用正则表达式删除关键词行
         pattern = r'^\[\d{2}:\d{2}\.\d{3}\]( )?*(' + '|'.join(keywords) + ')( )?*(:|：).*'
         no_header_lyrics = re.sub(pattern, '', lyrics, flags=re.MULTILINE)
-    except re.error as e:
-        print(f"Regex error: {e}")
-        return lyrics
 
     # 替换时间戳的小数点为冒号，保留毫秒部分的前两位
     formatted_lyrics = re.sub(r'(\d{2}:\d{2})\.(\d{3})', lambda m: f"{m.group(1)}:{str(round(int(m.group(2)) / 10)).zfill(2)}", no_header_lyrics)
