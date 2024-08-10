@@ -43,31 +43,12 @@ def safe_filename(artist, title):
 
 
 def clean_and_format_lyrics(lyrics):
-    # 定义需要匹配的关键词列表
-    keywords = [
-        "作词", "作詞", "作曲", "编曲", "編曲", "编曲 Arranger", "制作人", "制作人 Producer", "演唱", 
-        "歌", "音乐", "词曲", "词", "詞", "曲", "制作", "填词", "配器", "演奏", 
-        "作曲者", "作词者", "主唱", "吉他手", "鼓手", "贝斯手", "合成器", "混音", "录音", "监制", "录制",
-        "出品 Produced by", "母带制作 Mastering Engineer", "混音师 Mixing Engineer", "录音师 Recording Engineer",
-        "乐器录音师 Instrumental Recording Engineer", "乐器录音棚 Instrumental Recording Studio",
-        "人声录音师 Vocal Recording Engineer", "人声录音棚 Vocal Recording Studio", "和声 Backing Vocal", 
-        "架子鼓 Drums", "电吉他 Electric Guitar", "木吉他 Acoustic Guitar", "人声 Vocal Artist", "筝 Koto", 
-        "二胡 Erhu", "尺八 Shakuhachi", "津轻三味线 Tsugaru-Shamisen", "乐队配器 Orchestrator", 
-        "乐队 Orchestra", "指挥 Conductor", "录音棚 Recording Studio", "舞台监督 Orchestra Stage Manager", 
-        "乐团经理 Orchestra Manager", "音乐监制 Music Supervisor", "联合制作 Co-produced by", 
-        "录音现场指导 Scoring Sessions Director"
-    ]
-
-    # 使用正则表达式删除关键词行
-    pattern = r'^\[\d{2}:\d{2}\.\d{3}\]( )?*(' + '|'.join(keywords) + ')( )?*(:|：).*'
-    no_header_lyrics = re.sub(pattern, '', lyrics, flags=re.MULTILINE)
-
+    # 使用正则表达式删除
+    no_header_lyrics = re.sub(r'^\[\d{2}:\d{2}\.\d{3}\]( )?*(作词|作詞|作曲|编曲|編曲|编曲 Arranger|制作人|制作人 Producer|演唱|歌|音乐|词曲|词|詞|曲|制作|填词|配器|演奏|作曲者|作词者|主唱|吉他手|鼓手|贝斯手|合成器|混音|录音|监制|录制|出品 Produced by|母带制作 Mastering Engineer|混音师 Mixing Engineer|录音师 Recording Engineer|乐器录音师 Instrumental Recording Engineer|乐器录音棚 Instrumental Recording Studio|人声录音师 Vocal Recording Engineer|人声录音棚 Vocal Recording Studio|和声 Backing Vocal|架子鼓 Drums|电吉他 Electric Guitar|木吉他 Acoustic Guitar|人声 Vocal Artist|筝 Koto|二胡 Erhu|尺八 Shakuhachi|津轻三味线 Tsugaru-Shamisen|乐队配器 Orchestrator|乐队 Orchestra|指挥 Conductor|录音棚 Recording Studio|舞台监督 Orchestra Stage Manager|乐团经理 Orchestra Manager|音乐监制 Music Supervisor|联合制作 Co-produced by|录音现场指导 Scoring Sessions Director)( )?*(:|：).*', '', lyrics, flags=re.MULTILINE)
     # 替换时间戳的小数点为冒号，保留毫秒部分的前两位
     formatted_lyrics = re.sub(r'(\d{2}:\d{2})\.(\d{3})', lambda m: f"{m.group(1)}:{str(round(int(m.group(2)) / 10)).zfill(2)}", no_header_lyrics)
-    
     # 删除连续的多余空行
     final_lyrics = re.sub(r'\n+', '\n', formatted_lyrics)
-    
     return final_lyrics.strip()
 
 
