@@ -75,6 +75,6 @@ for song in playlist_data:
             logging.info(f"Lyrics for {title} by {artist} saved successfully.")
         except IOError as e:
             logging.error(f"Error saving lyrics for {title} by {artist}: {e}")
-        time.sleep(1)
+        time.sleep(0.2)
 
 print("歌词已成功下载并保存。")
