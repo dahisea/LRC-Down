@@ -45,7 +45,7 @@ def safe_filename(artist, title):
 def clean_and_format_lyrics(lyrics):
     # 使用正则表达式删除
     no_header_lyrics_n = re.sub(
-    r'^\[.*?\]\s*([\u4e00-\u9fa5\u3040-\u30FFa-zA-Z\s]+)\s*[:：].*?', 
+    r'^\[.*?\]\s*([\u4e00-\u9fa5\u3040-\u30FFa-zA-Z\s]+)\s*[:：].*', 
     '', 
     lyrics, 
     flags=re.MULTILINE
