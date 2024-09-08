@@ -1,0 +1,47 @@
+name: Test
+
+on:
+  watch:
+    types: [started]
+   
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps: 
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Configure Net
+      uses: Boostport/setup-cloudflare-warp@v1
+      with: 
+        organization: ${{ secrets.CLOUDFLARE_ORGANIZATION }}
+        auth_client_id: ${{ secrets.CLOUDFLARE_AUTH_CLIENT_ID }}
+        auth_client_secret: ${{ secrets.CLOUDFLARE_AUTH_CLIENT_SECRET }}
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.12
+
+    - name: Install dependencies
+      run: |
+        pip install requests
+
+    - name: Read
+      run: |
+        cp ${{ github.workspace }}/run.py ${{ github.workspace }}/updater.py
+        echo "${{ secrets.TAPI }}" > api.txt
+        sed -i '7 r api.txt' ${{ github.workspace }}/updater.py
+        python ${{ github.workspace }}/updater.py
+    
+    - name: Archive output
+      run: |
+        cd ${{ github.workspace }}
+        zip -r lyrics.zip lyrics/
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: lyric
+        path: ${{ github.workspace }}/lyrics.zip
