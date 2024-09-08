@@ -44,9 +44,12 @@ def safe_filename(artist, title):
 
 def clean_and_format_lyrics(lyrics):
     # 使用正则表达式删除
-    no_header_lyrics = re.sub(r'^\[.*?]( |)*(作词|作詞|作曲|编曲|編曲|编曲 Arranger|制作人|制作人 Producer|演唱|歌|音乐|词曲|词|詞|曲|制作|填词|配器|演奏|作曲者|作词者|主唱|吉他手|鼓手|贝斯手|合成器|混音|录音|监制|录制)( |)*(:|：).*', '', lyrics, flags=re.MULTILINE)
-
-    no_header_lyrics_n = re.sub(r'^\[.*?]( |)*([\u4e00-\u9fa5\u3040-\u30FFa-zA-Z\s]+)( |)*(:|：)[^"“”「」]*', '', lyrics, flags=re.MULTILINE)
+    no_header_lyrics_n = re.sub(
+    r'^\[.*?\]\s*([\u4e00-\u9fa5\u3040-\u30FFa-zA-Z\s]+)\s*[:：][^"“”「」]*', 
+    '', 
+    lyrics, 
+    flags=re.MULTILINE
+)
 
     # 保留毫秒部分的前两位
     formatted_lyrics = re.sub(
