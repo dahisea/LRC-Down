@@ -12,20 +12,13 @@ import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 headers = {
-    "Connection": "keep-alive",
-    "sec-ch-ua-platform": "Android",
     "User-Agent": "Mozilla/5.0 (Linux; Android 14; HBP-AL00 Build/AP2A.240905.003) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.6723.5 Mobile Safari/537.36",
-    "sec-ch-ua": 'Chromium";v="130", "Android WebView";v="130", "Not?A_Brand";v="99"',
-    "sec-ch-ua-mobile": "?1",
-    "Accept": "*/*",
     "Origin": "https://www.cnblogs.com",
     "X-Requested-With": "mark.via.gp",
     "Sec-Fetch-Site": "cross-site",
     "Sec-Fetch-Mode": "cors",
     "Sec-Fetch-Dest": "empty",
-    "Referer": "https://www.cnblogs.com/",
-    "Accept-Encoding": "gzip, deflate, br, zstd",
-    "Accept-Language": "zh-TW,zh-SG;q=0.9,zh;q=0.8,en-US;q=0.7,en;q=0.6,ja-JP;q=0.5,ja;q=0.4"
+    "Referer": "https://www.cnblogs.com/"
 }
 
 
