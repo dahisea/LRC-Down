@@ -46,6 +46,9 @@ def safe_filename(artist, title):
         filename = f"{hash_str}.lrc"
     return f"lyrics/{filename}"
 
+
+
+def safe_lyrics(lyrics):
     # 删除信息
     no_header_lyrics = re.sub(r'^\[.*?]( |)*(作词|作詞|作曲|编曲|編曲|演唱|歌|音乐|词曲|词|詞|曲|制作|填词|配器|演奏|作曲者|作词者|监制|录制)( |)*(:|：).*', '', lyrics, flags=re.MULTILINE)
 
@@ -75,7 +78,7 @@ for song in playlist_data:
 
     # 检查歌词是否纯音乐
     if "纯音乐，请欣赏" not in lyrics:
-        final_lyrics = clean_and_format_lyrics(lyrics)
+        final_lyrics = safe_lyrics(lyrics)
         filename = safe_filename(artist, title)
         try:
             with open(filename, 'w', encoding='utf-8') as file:
