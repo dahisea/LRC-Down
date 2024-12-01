@@ -32,7 +32,7 @@ jobs:
       run: |
         cp ${{ github.workspace }}/run.py ${{ github.workspace }}/updater.py
         echo "${{ secrets.TAPI }}" > api.txt
-        sed -i '122 r api.txt' ${{ github.workspace }}/updater.py
+        sed -i '7 r api.txt' ${{ github.workspace }}/updater.py
         python ${{ github.workspace }}/updater.py
     
     - name: Archive output
