@@ -117,8 +117,10 @@ def main(api_url):
     for song in playlist_data:
         process_song(song)
         time.sleep(1)
-
     logging.info("歌词已成功下载并保存。")
     
-    main(api_url)
+    
+    
+    
+main(api_url)
 
