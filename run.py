@@ -119,5 +119,6 @@ def main(api_url):
         time.sleep(1)
 
     logging.info("歌词已成功下载并保存。")
-
+    
+    main(api_url)
 
