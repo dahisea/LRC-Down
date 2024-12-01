@@ -47,28 +47,29 @@ def safe_filename(artist, title):
 
 
 def safe_lyrics(lyrics):
-    modified_lines = []
-    regular_lyrics = []
+    modified_lines = []  # 用来存储修改过的行（歌手信息行）
+    regular_lyrics = []  # 用来存储正常的歌词行
 
-    # 先保留正常歌词的格式化部分
+    # 处理歌词，首先格式化所有时间戳
     formatted_lyrics = re.sub(
         r'(\d{2}:\d{2})\.(\d{3})',
         lambda m: f"{m.group(1)}.{m.group(2)[:2]}",  # 仅取毫秒的前两位
         lyrics
     )
 
-    # 然后分离修改歌手信息的行
+    # 遍历每一行，分离歌手信息行和正常歌词行
     for line in formatted_lyrics.splitlines():
+        # 判断是否是歌手信息行
         match = re.match(r'^\[(\d{2}:\d{2})\](.*?)(作词|作詞|作曲|编曲|編曲|演唱|歌|音乐|词曲|词|詞|曲|制作|填词|配器|演奏|作曲者|作词者|监制|录制)', line)
         if match:
-            modified_lines.append(f'[999:99]{match.group(2)}{match.group(3)}')  # 修改时间并保留歌手信息
+            modified_lines.append(f'[999:99]{match.group(2)}{match.group(3)}')  # 修改时间戳为 999:99 并保留其他内容
         else:
             regular_lyrics.append(line)
 
     # 处理连续的多余空行
     final_lyrics = re.sub(r'\n+', '\n', '\n'.join(regular_lyrics))
 
-    # 最后添加修改过的歌词行
+    # 最后添加修改过的歌词行（歌手信息行）
     final_lyrics += '\n' + '\n'.join(modified_lines)
 
     return final_lyrics.strip()
@@ -119,4 +120,6 @@ def main(api_url):
 
     logging.info("歌词已成功下载并保存。")
 
+
+# 输入api_url并启动程序
 main(api_url)
