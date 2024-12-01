@@ -62,18 +62,19 @@ def safe_lyrics(lyrics):
         # 判断是否是歌手信息行
         match = re.match(r'^\[(\d{2}:\d{2})\](.*?)(作词|作詞|作曲|编曲|編曲|演唱|歌|音乐|词曲|词|詞|曲|制作|填词|配器|演奏|作曲者|作词者|监制|录制)', line)
         if match:
-            modified_lines.append(f'[999:99]{match.group(2)}')  # 修改时间戳为 999:99 并保留其他内容
+            # 修改时间戳为 [999:99] 并保留其他内容
+            modified_lines.append(f'[999:99]{match.group(2)}')
         else:
+            # 普通歌词行直接存储
             regular_lyrics.append(line)
 
     # 处理连续的多余空行
     final_lyrics = re.sub(r'\n+', '\n', '\n'.join(regular_lyrics))
 
-    # 最后添加修改过的歌词行（歌手信息行）
+    # 最后添加修改过的歌词行（歌手信息行），并确保它们在末尾
     final_lyrics += '\n' + '\n'.join(modified_lines)
 
     return final_lyrics.strip()
-
 
 # 获取歌词
 def fetch_lyrics(lyrics_url):
