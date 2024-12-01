@@ -121,6 +121,3 @@ def main(api_url):
     logging.info("歌词已成功下载并保存。")
 
 
-# 输入api_url并启动程序
-api_url = "your_api_url_here"  # Replace with your actual API URL
-main(api_url)
