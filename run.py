@@ -18,7 +18,6 @@ headers = {
     "Referer": "https://www.cnblogs.com/"
 }
 
-
 # 获取播放列表数据
 def fetch_playlist_data(api_url):
     try:
@@ -117,10 +116,7 @@ def main(api_url):
     for song in playlist_data:
         process_song(song)
         time.sleep(1)
-    logging.info("歌词已成功下载并保存。")
-    
-    
-    
-    
-main(api_url)
 
+    logging.info("歌词已成功下载并保存。")
+
+main(api_url)
