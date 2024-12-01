@@ -62,7 +62,7 @@ def safe_lyrics(lyrics):
         # 判断是否是歌手信息行
         match = re.match(r'^\[(\d{2}:\d{2})\](.*?)(作词|作詞|作曲|编曲|編曲|演唱|歌|音乐|词曲|词|詞|曲|制作|填词|配器|演奏|作曲者|作词者|监制|录制)', line)
         if match:
-            modified_lines.append(f'[999:99]{match.group(2)}{match.group(3)}')  # 修改时间戳为 999:99 并保留其他内容
+            modified_lines.append(f'[999:99]{match.group(2)}')  # 修改时间戳为 999:99 并保留其他内容
         else:
             regular_lyrics.append(line)
 
@@ -120,6 +120,4 @@ def main(api_url):
 
     logging.info("歌词已成功下载并保存。")
 
-
-# 输入api_url并启动程序
 main(api_url)
