@@ -21,9 +21,6 @@ MAX_FILENAME_LENGTH = 105
 
 # 安全文件名生成
 def safe_filename(artist, title):
-    """
-    生成安全的文件名，确保文件名不会超出最大长度
-    """
     filename = f"{artist} - {title}.lrc"
     if len(filename) > MAX_FILENAME_LENGTH - len("lyrics/"):
         hash_obj = hashlib.md5(filename.encode('utf-8'))
@@ -48,9 +45,11 @@ def safe_lyrics(lyrics):
 
     # 处理歌词行
     for line in formatted_lyrics.splitlines():
+        # 匹配歌手信息行并替换时间戳部分
         match = re.match(r'^\[(\d{2}:\d{2})\](.*?)(作词|作詞|作曲|编曲|編曲|演唱|歌|音乐|词曲|词|詞|曲|制作|填词|配器|演奏|作曲者|作词者|监制|录制)', line)
         if match:
-            modified_lines.append(f'[999:99]{match.group(2)}')  # 歌手信息行，时间戳替换为 999:99
+            # 保留时间戳后的内容不变
+            modified_lines.append(f'[999:99]{match.group(2)}')
         else:
             regular_lyrics.append(line)  # 普通歌词行
 
@@ -58,53 +57,39 @@ def safe_lyrics(lyrics):
     final_lyrics = '\n'.join(regular_lyrics) + '\n' + '\n'.join(modified_lines)
     return re.sub(r'\n+', '\n', final_lyrics).strip()
 
-# 获取播放列表数据
+# 獲取播放列表數據
 def fetch_playlist_data(api_url):
-    """
-    获取歌曲列表数据，返回 JSON 格式的响应
-    """
     try:
         response = requests.get(api_url, headers=headers)
-        response.raise_for_status()  # 如果请求失败，抛出异常
+        response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
         logging.error(f"Error fetching playlist data from {api_url}: {e}")
         return None
 
-# 获取歌词
+# 獲取歌詞
 def fetch_lyrics(lyrics_url):
-    """
-    获取歌词数据，返回歌词文本
-    """
     try:
         lyrics_response = requests.get(lyrics_url, headers=headers)
-        lyrics_response.raise_for_status()  # 如果请求失败，抛出异常
+        lyrics_response.raise_for_status()
         return lyrics_response.text
     except requests.exceptions.RequestException as e:
         logging.error(f"Error fetching lyrics from {lyrics_url}: {e}")
         return None
 
-# 处理播放列表中的每首歌
+# 處理播放列表中的每首歌
 def process_song(song):
-    """
-    处理每首歌的歌词，保存歌词到文件
-    """
     artist = re.sub(r' ?/ ?', ' ', song.get('author', song.get('artist', '')))
     title = re.sub(r' ?/ ?', ' ', song.get('title', song.get('name', '')))
-    lyrics_url = song.get('lrc')
-
-    if not lyrics_url:
-        logging.warning(f"Song '{title}' by {artist} does not have lyrics URL.")
-        return
+    lyrics_url = song['lrc']
 
     lyrics = fetch_lyrics(lyrics_url)
-    if not lyrics or "纯音乐，请欣赏" in lyrics:  # 跳过纯音乐
+    if not lyrics or "纯音乐，请欣赏" in lyrics:
         return
 
     final_lyrics = safe_lyrics(lyrics)
     filename = safe_filename(artist, title)
 
-    # 如果文件已存在，覆盖它
     try:
         with open(filename, 'w', encoding='utf-8') as file:
             file.write(final_lyrics)
@@ -114,10 +99,7 @@ def process_song(song):
 
 # 主流程
 def main(api_url):
-    """
-    主流程，获取并处理歌曲数据
-    """
-    os.makedirs("lyrics", exist_ok=True)  # 确保目录存在
+    os.makedirs("lyrics", exist_ok=True)  # 確保目錄存在
 
     playlist_data = fetch_playlist_data(api_url)
     if not playlist_data:
@@ -129,5 +111,5 @@ def main(api_url):
 
     logging.info("歌詞已成功下載並保存。")
 
-# 设置你的 API URL
+# 替換為实际的 API 地址
 main(api_url)
