@@ -2,6 +2,7 @@ import requests
 import re
 import hashlib
 import logging
+import os
 
 # 設置日誌
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -27,6 +28,7 @@ def safe_filename(artist, title):
         filename = f"{hash_str}.lrc"
     return f"lyrics/{filename}"
 
+# 處理歌詞
 def safe_lyrics(lyrics):
     modified_lines = []  # 用來存儲修改過的行（歌手信息行）
     regular_lyrics = []  # 用來存儲正常的歌詞行
@@ -91,6 +93,8 @@ def process_song(song):
 
 # 主流程
 def main(api_url):
+    os.makedirs("lyrics", exist_ok=True)  # 確保目錄存在
+
     playlist_data = fetch_playlist_data(api_url)
     if not playlist_data:
         logging.error("No playlist data available, exiting...")
