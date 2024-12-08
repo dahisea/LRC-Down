@@ -45,13 +45,14 @@ def safe_lyrics(lyrics):
 
     # 处理歌词行
     for line in formatted_lyrics.splitlines():
-        # 匹配歌手信息行并替换时间戳部分
+        # 更准确的匹配歌手信息行，包括关键字（作词，作曲等）
         match = re.match(r'^\[(\d{2}:\d{2})\](.*?)(作词|作詞|作曲|编曲|編曲|演唱|歌|音乐|词曲|词|詞|曲|制作|填词|配器|演奏|作曲者|作词者|监制|录制)', line)
         if match:
-            # 保留时间戳后的内容不变
+            # 保留歌手信息行内容，将时间戳替换为 [999:99]
             modified_lines.append(f'[999:99]{match.group(2)}')
         else:
-            regular_lyrics.append(line)  # 普通歌词行
+            # 普通歌词行保留原时间戳
+            regular_lyrics.append(line)
 
     # 合并并去除多余空行
     final_lyrics = '\n'.join(regular_lyrics) + '\n' + '\n'.join(modified_lines)
