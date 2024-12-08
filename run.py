@@ -11,6 +11,7 @@ import hashlib
 
 
 
+
 # 设置请求头
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Linux; Android 14; HBP-AL00 Build/AP2A.240905.003) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.6723.5 Mobile Safari/537.36",
@@ -26,9 +27,9 @@ HEADERS = {
 os.makedirs("lyrics", exist_ok=True)
 
 # 下载并保存歌词
-def download_lyrics(api):
+def download_lyrics(api_url):
     try:
-        playlist_data = requests.get(api, headers=HEADERS).json()
+        playlist_data = requests.get(api_url, headers=HEADERS).json()
     except Exception as e:
         print(f"无法获取播放列表: {e}")
         return
@@ -49,14 +50,18 @@ def download_lyrics(api):
 
         # 格式化歌词
         lyrics = re.sub(r'(\d{2}:\d{2})\.(\d{3})', r'\1', lyrics)  # 去掉毫秒
-        formatted_lyrics = []
+        regular_lyrics = []
+        metadata_lines = []
+
         for line in lyrics.splitlines():
-            match = re.match(r'^\[(\d{2}:\d{2})\](.*?)(作词|作曲|编曲|演唱|制作|词|曲|音乐|录制)', line)
-            if match:
-                formatted_lyrics.append(f'[999:99]{match.group(2)}')
+            # 匹配作词作曲等信息的行，要求包含中文或英文冒号
+            if re.match(r'^\[\d{2}:\d{2}\].*?[:：].*$', line):
+                metadata_lines.append(re.sub(r'^\[\d{2}:\d{2}\]', '[999:99]', line))
             else:
-                formatted_lyrics.append(line)
-        lyrics = '\n'.join(formatted_lyrics).strip()
+                regular_lyrics.append(line)
+
+        # 拼接歌词，元数据行移动到最后
+        lyrics = '\n'.join(regular_lyrics).strip() + '\n' + '\n'.join(metadata_lines).strip()
 
         # 生成安全文件名
         filename = f"{artist} - {title}.lrc"
@@ -71,5 +76,4 @@ def download_lyrics(api):
         except Exception as e:
             print(f"保存失败: {e}")
 
-# 替换为实际 API 地址
 download_lyrics(api_url)
