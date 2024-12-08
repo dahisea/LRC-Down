@@ -46,10 +46,9 @@ def safe_lyrics(lyrics):
         else:
             regular_lyrics.append(line)
 
-    final_lyrics = re.sub(r'\n+', '\n', '\n'.join(regular_lyrics))
-    final_lyrics += '\n' + '\n'.join(modified_lines)
+    final_lyrics = '\n'.join(regular_lyrics) + '\n' + '\n'.join(modified_lines)
 
-    return final_lyrics.strip()
+    return re.sub(r'\n+', '\n', final_lyrics).strip()  # 確保沒有多余的空行
 
 # 獲取播放列表數據
 def fetch_playlist_data(api_url):
