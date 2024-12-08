@@ -1,11 +1,9 @@
 import requests
 import re
-import os
-import time
 import hashlib
 import logging
 
-# Configure logging
+# 設置日誌
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 headers = {
@@ -18,25 +16,9 @@ headers = {
     "Referer": "https://www.cnblogs.com/"
 }
 
-# 获取播放列表数据
-def fetch_playlist_data(api_url):
-    try:
-        response = requests.get(api_url, headers=headers)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        logging.error(f"Error fetching playlist data: {e}")
-        return None
-
-
-# 创建保存歌词文件的目录
-os.makedirs("lyrics", exist_ok=True)
-
-# 文件名最大长度
 MAX_FILENAME_LENGTH = 105
 
-
-# 生成安全的文件名
+# 安全文件名生成
 def safe_filename(artist, title):
     filename = f"{artist} - {title}.lrc"
     if len(filename) > MAX_FILENAME_LENGTH - len("lyrics/"):
@@ -45,38 +27,39 @@ def safe_filename(artist, title):
         filename = f"{hash_str}.lrc"
     return f"lyrics/{filename}"
 
-
 def safe_lyrics(lyrics):
-    modified_lines = []  # 用来存储修改过的行（歌手信息行）
-    regular_lyrics = []  # 用来存储正常的歌词行
+    modified_lines = []  # 用來存儲修改過的行（歌手信息行）
+    regular_lyrics = []  # 用來存儲正常的歌詞行
 
-    # 处理歌词，首先格式化所有时间戳
     formatted_lyrics = re.sub(
         r'(\d{2}:\d{2})\.(\d{3})',
-        lambda m: f"{m.group(1)}.{m.group(2)[:2]}",  # 仅取毫秒的前两位
+        lambda m: f"{m.group(1)}.{m.group(2)[:2]}",  # 僅取毫秒的前兩位
         lyrics
     )
 
-    # 遍历每一行，分离歌手信息行和正常歌词行
     for line in formatted_lyrics.splitlines():
-        # 判断是否是歌手信息行
         match = re.match(r'^\[(\d{2}:\d{2})\](.*?)(作词|作詞|作曲|编曲|編曲|演唱|歌|音乐|词曲|词|詞|曲|制作|填词|配器|演奏|作曲者|作词者|监制|录制)', line)
         if match:
-            # 修改时间戳为 [999:99] 并保留其他内容
             modified_lines.append(f'[999:99]{match.group(2)}')
         else:
-            # 普通歌词行直接存储
             regular_lyrics.append(line)
 
-    # 处理连续的多余空行
     final_lyrics = re.sub(r'\n+', '\n', '\n'.join(regular_lyrics))
-
-    # 最后添加修改过的歌词行（歌手信息行），并确保它们在末尾
     final_lyrics += '\n' + '\n'.join(modified_lines)
 
     return final_lyrics.strip()
 
-# 获取歌词
+# 獲取播放列表數據
+def fetch_playlist_data(api_url):
+    try:
+        response = requests.get(api_url, headers=headers)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Error fetching playlist data from {api_url}: {e}")
+        return None
+
+# 獲取歌詞
 def fetch_lyrics(lyrics_url):
     try:
         lyrics_response = requests.get(lyrics_url, headers=headers)
@@ -86,8 +69,7 @@ def fetch_lyrics(lyrics_url):
         logging.error(f"Error fetching lyrics from {lyrics_url}: {e}")
         return None
 
-
-# 处理播放列表中的每首歌
+# 處理播放列表中的每首歌
 def process_song(song):
     artist = re.sub(r' ?/ ?', ' ', song.get('author', song.get('artist', '')))
     title = re.sub(r' ?/ ?', ' ', song.get('title', song.get('name', '')))
@@ -107,7 +89,6 @@ def process_song(song):
     except IOError as e:
         logging.error(f"Error saving lyrics for {title} by {artist}: {e}")
 
-
 # 主流程
 def main(api_url):
     playlist_data = fetch_playlist_data(api_url)
@@ -117,8 +98,7 @@ def main(api_url):
 
     for song in playlist_data:
         process_song(song)
-        time.sleep(1)
 
-    logging.info("歌词已成功下载并保存。")
+    logging.info("歌詞已成功下載並保存。")
 
 main(api_url)
