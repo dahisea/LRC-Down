@@ -1,7 +1,7 @@
 import requests
 import re
+import logging
 import os
-import hashlib
 
 
 
@@ -11,9 +11,10 @@ import hashlib
 
 
 
+# 日志设置
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# 设置请求头
-HEADERS = {
+headers = {
     "User-Agent": "Mozilla/5.0 (Linux; Android 14; HBP-AL00 Build/AP2A.240905.003) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.6723.5 Mobile Safari/537.36",
     "Origin": "https://www.cnblogs.com",
     "X-Requested-With": "mark.via.gp",
@@ -23,57 +24,89 @@ HEADERS = {
     "Referer": "https://www.cnblogs.com/"
 }
 
-# 确保歌词目录存在
-os.makedirs("lyrics", exist_ok=True)
+MAX_FILENAME_LENGTH = 105
 
-# 下载并保存歌词
-def download_lyrics(api_url):
+# 安全文件名生成
+def safe_filename(artist, title):
+    filename = f"{artist} - {title}.lrc"
+    if len(filename) > MAX_FILENAME_LENGTH - len("lyrics/"):
+        filename = f"{hashlib.md5(filename.encode('utf-8')).hexdigest()}.lrc"
+    return f"lyrics/{filename}"
+
+# 处理歌词内容
+def process_lyrics(lyrics):
+    regular_lines = []
+    special_lines = []
+
+    for line in lyrics.splitlines():
+        # 匹配时间标签，去掉毫秒部分
+        line = re.sub(r'\[(\d{2}:\d{2})\.\d{2,3}\]', r'[\1]', line)
+
+        # 匹配作词/作曲信息行
+        match = re.match(r'^\[\d{2}:\d{2}\]\s*(.*?)(作词|作曲|编曲|古筝|二胡|人声调校|混音|母带)\s*[:：]\s*(.*)', line)
+        if match:
+            content = f"[999:99]{match.group(1).strip()} {match.group(3).strip()}"
+            special_lines.append(content)
+        else:
+            regular_lines.append(line)
+
+    # 去重和整理输出
+    return "\n".join(regular_lines).strip() + "\n" + "\n".join(special_lines).strip()
+
+# 下载歌词数据
+def fetch_lyrics(lyrics_url):
     try:
-        playlist_data = requests.get(api_url, headers=HEADERS).json()
-    except Exception as e:
-        print(f"无法获取播放列表: {e}")
+        response = requests.get(lyrics_url, headers=headers)
+        response.raise_for_status()
+        return response.text
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Error fetching lyrics from {lyrics_url}: {e}")
+        return None
+
+# 保存歌词
+def save_lyrics(artist, title, lyrics):
+    filename = safe_filename(artist, title)
+    try:
+        with open(filename, "w", encoding="utf-8") as file:
+            file.write(lyrics)
+        logging.info(f"Lyrics saved: {filename}")
+    except IOError as e:
+        logging.error(f"Error saving lyrics: {e}")
+
+# 处理每首歌曲
+def process_song(song):
+    artist = re.sub(r' ?/ ?', ' ', song.get('author', song.get('artist', 'Unknown Artist')))
+    title = re.sub(r' ?/ ?', ' ', song.get('title', song.get('name', 'Unknown Title')))
+    lyrics_url = song.get('lrc')
+
+    if not lyrics_url:
+        logging.warning(f"No lyrics URL found for {title} by {artist}")
         return
 
-    for song in playlist_data:
-        artist = re.sub(r' ?/ ?', ' ', song.get('author', song.get('artist', '')))
-        title = re.sub(r' ?/ ?', ' ', song.get('title', song.get('name', '')))
-        lyrics_url = song.get('lrc')
+    lyrics = fetch_lyrics(lyrics_url)
+    if not lyrics or "纯音乐，请欣赏" in lyrics:
+        logging.warning(f"No valid lyrics for {title} by {artist}")
+        return
 
-        try:
-            lyrics = requests.get(lyrics_url, headers=HEADERS).text
-        except Exception as e:
-            print(f"无法获取歌词: {e}")
-            continue
+    processed_lyrics = process_lyrics(lyrics)
+    save_lyrics(artist, title, processed_lyrics)
 
-        if not lyrics or "纯音乐，请欣赏" in lyrics:
-            continue
+# 主程序
+def main(api_endpoint):
+    os.makedirs("lyrics", exist_ok=True)
 
-        # 格式化歌词
-        lyrics = re.sub(r'(\d{2}:\d{2})\.(\d{3})', r'\1', lyrics)  # 去掉毫秒
-        regular_lyrics = []
-        metadata_lines = []
+    try:
+        response = requests.get(api_endpoint, headers=headers)
+        response.raise_for_status()
+        playlist = response.json()
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Error fetching playlist data: {e}")
+        return
 
-        for line in lyrics.splitlines():
-            # 匹配作词作曲等信息的行，要求包含中文或英文冒号
-            if re.match(r'^\[\d{2}:\d{2}\].*?[:：].*$', line):
-                metadata_lines.append(re.sub(r'^\[\d{2}:\d{2}\]', '[999:99]', line))
-            else:
-                regular_lyrics.append(line)
+    for song in playlist:
+        process_song(song)
 
-        # 拼接歌词，元数据行移动到最后
-        lyrics = '\n'.join(regular_lyrics).strip() + '\n' + '\n'.join(metadata_lines).strip()
+    logging.info("所有歌词已处理完成。")
 
-        # 生成安全文件名
-        filename = f"{artist} - {title}.lrc"
-        if len(filename) > 105 - len("lyrics/"):
-            filename = f"{hashlib.md5(filename.encode('utf-8')).hexdigest()}.lrc"
-        filepath = f"lyrics/{filename}"
-
-        try:
-            with open(filepath, 'w', encoding='utf-8') as file:
-                file.write(lyrics)
-            print(f"已保存歌词: {filepath}")
-        except Exception as e:
-            print(f"保存失败: {e}")
-
-download_lyrics(api_url)
+# 替换为您的 API 地址
+main(api_url)
