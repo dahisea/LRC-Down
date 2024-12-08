@@ -38,15 +38,15 @@ def safe_lyrics(lyrics):
 
     # 只保留分钟:秒，移除毫秒部分
     formatted_lyrics = re.sub(
-        r'(\d{2}:\d{2})\.(\d{3})',  # 正则匹配时间戳
+        r'(\d{2}:\d{2})\.(\d{2,3})',  # 正则匹配时间戳
         r'\1',  # 保留分钟:秒
         lyrics
     )
 
     # 处理歌词行
     for line in formatted_lyrics.splitlines():
-        # 更准确的匹配歌手信息行，包括关键字（作词，作曲等）
-        match = re.match(r'^\[(\d{2}:\d{2})\](.*?)(作词|作詞|作曲|编曲|編曲|演唱|歌|音乐|词曲|词|詞|曲|制作|填词|配器|演奏|作曲者|作词者|监制|录制)', line)
+        # 修改正则表达式，支持中文冒号与英文冒号
+        match = re.match(r'^\[(\d{2}:\d{2})\](.*?)(作词|作詞|作曲|编曲|編曲|演唱|歌|音乐|词曲|词|詞|曲|制作|填词|配器|演奏|作曲者|作词者|监制|录制|古筝|二胡|人声调校|混音|母带)(:|：)', line)
         if match:
             # 保留歌手信息行内容，将时间戳替换为 [999:99]
             modified_lines.append(f'[999:99]{match.group(2)}')
@@ -100,7 +100,7 @@ def process_song(song):
 
 # 主流程
 def main(api_url):
-    os.makedirs("lyrics", exist_ok=True)  # 確保目錄存在
+    os.makedirs("lyrics", exist_ok=True)  # 确保目录存在
 
     playlist_data = fetch_playlist_data(api_url)
     if not playlist_data:
@@ -112,5 +112,5 @@ def main(api_url):
 
     logging.info("歌詞已成功下載並保存。")
 
-# 替換為实际的 API 地址
+# 替换为实际的 API 地址
 main(api_url)
