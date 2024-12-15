@@ -2,7 +2,7 @@ import requests
 import re
 import logging
 import os
-
+import hashlib
 
 
 
