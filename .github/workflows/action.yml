@@ -15,13 +15,6 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
     
-    - name: Configure Net
-      uses: Boostport/setup-cloudflare-warp@v1
-      with: 
-        organization: ${{ secrets.CLOUDFLARE_ORGANIZATION }}
-        auth_client_id: ${{ secrets.CLOUDFLARE_AUTH_CLIENT_ID }}
-        auth_client_secret: ${{ secrets.CLOUDFLARE_AUTH_CLIENT_SECRET }}
-
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
