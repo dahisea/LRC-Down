@@ -1,8 +1,11 @@
 name: Update
 
 on:
+  # 手动触发
+  workflow_dispatch:
   watch:
     types: [started]
+
    
 jobs:
   build:
