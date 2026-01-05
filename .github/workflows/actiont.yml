@@ -1,46 +1,177 @@
-name: Download text test
+name: Download Lyrics Text Test
 
 on:
   workflow_dispatch:
+    inputs:
+      max_retries:
+        description: 'Maximum number of retries'
+        required: false
+        default: '3'
+      rate_limit_delay:
+        description: 'Delay between requests (seconds)'
+        required: false
+        default: '0.5'
    
 jobs:
-  build:
+  download-lyrics:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     
     steps: 
-    - name: Checkout
+    - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
     
-    - name: Configure Net
+    - name: Configure Cloudflare WARP
       uses: Boostport/setup-cloudflare-warp@v1
       with: 
         organization: ${{ secrets.CLOUDFLARE_ORGANIZATION }}
         auth_client_id: ${{ secrets.CLOUDFLARE_AUTH_CLIENT_ID }}
         auth_client_secret: ${{ secrets.CLOUDFLARE_AUTH_CLIENT_SECRET }}
+      continue-on-error: true
 
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: 3.12
+        python-version: '3.12'
+        cache: 'pip'
 
     - name: Install dependencies
       run: |
-        pip install requests
+        python -m pip install --upgrade pip
+        pip install requests urllib3
 
-    - name: Read
+    - name: Create lyrics directory
+      run: mkdir -p lyrics
+
+    - name: Download lyrics
+      env:
+        LYRICS_API_URL: ${{ secrets.TAPI }}
+        MAX_RETRIES: ${{ github.event.inputs.max_retries || '3' }}
+        RETRY_BACKOFF: '1.0'
+        REQUEST_TIMEOUT: '30'
+        RATE_LIMIT_DELAY: ${{ github.event.inputs.rate_limit_delay || '0.5' }}
+        LYRICS_DIR: 'lyrics'
+        MAX_FILENAME_LENGTH: '105'
       run: |
-        cp ${{ github.workspace }}/run.py ${{ github.workspace }}/updater.py
-        echo "${{ secrets.TAPI }}" > api.txt
-        sed -i '7 r api.txt' ${{ github.workspace }}/updater.py
-        python ${{ github.workspace }}/updater.py
-    
-    - name: Archive output
+        python run.py
+      continue-on-error: false
+
+    - name: Check download results
+      id: check_results
+      run: |
+        LYRIC_COUNT=$(find lyrics -type f -name "*.lrc" | wc -l)
+        echo "lyric_count=$LYRIC_COUNT" >> $GITHUB_OUTPUT
+        echo "📊 Downloaded $LYRIC_COUNT lyrics files"
+        
+        if [ $LYRIC_COUNT -eq 0 ]; then
+          echo "⚠️ Warning: No lyrics files were downloaded"
+          exit 1
+        fi
+
+    - name: Generate download report
+      if: always()
+      run: |
+        echo "# Download Report" > report.md
+        echo "" >> report.md
+        echo "- **Workflow Run**: #${{ github.run_number }}" >> report.md
+        echo "- **Triggered by**: ${{ github.event_name }}" >> report.md
+        echo "- **Timestamp**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> report.md
+        echo "- **Total lyrics**: ${{ steps.check_results.outputs.lyric_count }}" >> report.md
+        echo "" >> report.md
+        
+        if [ -f lyrics_downloader.log ]; then
+          echo "## Log Summary" >> report.md
+          echo '```' >> report.md
+          tail -n 50 lyrics_downloader.log >> report.md
+          echo '```' >> report.md
+        fi
+        
+        cat report.md
+
+    - name: Archive lyrics files
+      if: steps.check_results.outputs.lyric_count > 0
       run: |
         cd ${{ github.workspace }}
-        zip -r lyrics.zip lyrics/
-    
-    - name: Upload artifact
+        # 创建带时间戳的压缩包
+        TIMESTAMP=$(date -u '+%Y%m%d_%H%M%S')
+        zip -r lyrics_${TIMESTAMP}.zip lyrics/ -x "*.log"
+        
+        # 同时创建一个最新版本的链接
+        cp lyrics_${TIMESTAMP}.zip lyrics_latest.zip
+        
+        echo "📦 Created archive: lyrics_${TIMESTAMP}.zip"
+        ls -lh lyrics_*.zip
+
+    - name: Upload lyrics artifact
+      if: steps.check_results.outputs.lyric_count > 0
       uses: actions/upload-artifact@v4
       with:
-        name: lyric
-        path: ${{ github.workspace }}/lyrics.zip
+        name: lyrics-${{ github.run_number }}
+        path: |
+          lyrics_*.zip
+          report.md
+        retention-days: 30
+        compression-level: 9
+
+    - name: Upload log file
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: logs-${{ github.run_number }}
+        path: lyrics_downloader.log
+        retention-days: 7
+
+    - name: Create release (optional)
+      if: steps.check_results.outputs.lyric_count > 0 && github.event_name == 'workflow_dispatch'
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: lyrics-${{ github.run_number }}
+        name: Lyrics Collection ${{ github.run_number }}
+        body_path: report.md
+        files: lyrics_latest.zip
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      continue-on-error: true
+
+    - name: Cleanup old artifacts
+      uses: actions/github-script@v7
+      if: always()
+      with:
+        script: |
+          const artifacts = await github.rest.actions.listArtifactsForRepo({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+          });
+          
+          // 保留最新的 10 个 artifacts
+          const sortedArtifacts = artifacts.data.artifacts
+            .filter(artifact => artifact.name.startsWith('lyrics-'))
+            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+          
+          for (let i = 10; i < sortedArtifacts.length; i++) {
+            console.log(`Deleting old artifact: ${sortedArtifacts[i].name}`);
+            await github.rest.actions.deleteArtifact({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              artifact_id: sortedArtifacts[i].id,
+            });
+          }
+      continue-on-error: true
+
+    - name: Summary
+      if: always()
+      run: |
+        echo "## 🎵 Lyrics Download Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "- **Total files**: ${{ steps.check_results.outputs.lyric_count }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Status**: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Duration**: ${{ job.duration }}s" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if [ -f report.md ]; then
+          cat report.md >> $GITHUB_STEP_SUMMARY
+        fi
