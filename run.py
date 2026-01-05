@@ -28,17 +28,8 @@ LYRICS_DIR = os.getenv('LYRICS_DIR', 'lyrics')
 RATE_LIMIT_DELAY = float(os.getenv('RATE_LIMIT_DELAY', '0.5'))
 
 headers = {
-    "User-Agent": os.getenv(
-        'USER_AGENT',
-        "Mozilla/5.0 (Linux; Android 14; HBP-AL00 Build/AP2A.240905.003) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.6723.5 Mobile Safari/537.36"
-    ),
-    "Origin": "https://www.cnblogs.com",
-    "X-Requested-With": "mark.via.gp",
-    "Sec-Fetch-Site": "cross-site",
-    "Sec-Fetch-Mode": "cors",
-    "Sec-Fetch-Dest": "empty",
-    "Referer": "https://www.cnblogs.com/"
+    "User-Agent": "Mozilla/5.0 (Linux; Android 14; HBP-AL00 Build/AP2A.240905.003) ",
+    "X-Requested-With": "mark.via.gp"
 }
 
 
