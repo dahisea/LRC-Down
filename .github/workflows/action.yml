@@ -1,4 +1,4 @@
-name: Download Lyrics Text
+name: Download Lyrics
 
 on:
   workflow_dispatch:
@@ -7,15 +7,26 @@ on:
         description: 'Maximum number of retries'
         required: false
         default: '3'
+        type: string
       rate_limit_delay:
         description: 'Delay between requests (seconds)'
         required: false
         default: '0.5'
-   
+        type: string
+      timeout_minutes:
+        description: 'Workflow timeout (minutes)'
+        required: false
+        default: '30'
+        type: string
+  
+  schedule:
+    # 每天 UTC 00:00 自动运行（可选）
+    - cron: '0 0 * * *'
+
 jobs:
   download-lyrics:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: ${{ fromJSON(github.event.inputs.timeout_minutes || '30') }}
     
     steps: 
     - name: Checkout repository
@@ -54,16 +65,20 @@ jobs:
         RATE_LIMIT_DELAY: ${{ github.event.inputs.rate_limit_delay || '0.5' }}
         LYRICS_DIR: 'lyrics'
         MAX_FILENAME_LENGTH: '105'
-      run: |
-        python run.py
+      run: python run.py
       continue-on-error: false
 
     - name: Check download results
       id: check_results
       run: |
-        LYRIC_COUNT=$(find lyrics -type f -name "*.lrc" | wc -l)
+        LYRIC_COUNT=$(find lyrics -type f -name "*.lrc" 2>/dev/null | wc -l)
         echo "lyric_count=$LYRIC_COUNT" >> $GITHUB_OUTPUT
-        echo "📊 Downloaded $LYRIC_COUNT lyrics files"
+        
+        # 统计文件大小
+        TOTAL_SIZE=$(du -sh lyrics 2>/dev/null | cut -f1)
+        echo "total_size=$TOTAL_SIZE" >> $GITHUB_OUTPUT
+        
+        echo "📊 Downloaded $LYRIC_COUNT lyrics files ($TOTAL_SIZE)"
         
         if [ $LYRIC_COUNT -eq 0 ]; then
           echo "⚠️ Warning: No lyrics files were downloaded"
@@ -73,16 +88,29 @@ jobs:
     - name: Generate download report
       if: always()
       run: |
-        echo "# Download Report" > report.md
+        echo "# 📊 Download Report" > report.md
         echo "" >> report.md
-        echo "- **Workflow Run**: #${{ github.run_number }}" >> report.md
-        echo "- **Triggered by**: ${{ github.event_name }}" >> report.md
-        echo "- **Timestamp**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> report.md
-        echo "- **Total lyrics**: ${{ steps.check_results.outputs.lyric_count }}" >> report.md
+        echo "| Item | Value |" >> report.md
+        echo "|------|-------|" >> report.md
+        echo "| Workflow Run | #${{ github.run_number }} |" >> report.md
+        echo "| Triggered By | ${{ github.event_name }} |" >> report.md
+        echo "| Timestamp | $(date -u '+%Y-%m-%d %H:%M:%S UTC') |" >> report.md
+        echo "| Total Lyrics | ${{ steps.check_results.outputs.lyric_count }} |" >> report.md
+        echo "| Total Size | ${{ steps.check_results.outputs.total_size }} |" >> report.md
         echo "" >> report.md
         
+        # 添加文件列表（前20个）
+        if [ -d lyrics ] && [ "$(ls -A lyrics)" ]; then
+          echo "## 📝 Downloaded Files (First 20)" >> report.md
+          echo '```' >> report.md
+          ls -lh lyrics/*.lrc 2>/dev/null | head -20 >> report.md
+          echo '```' >> report.md
+          echo "" >> report.md
+        fi
+        
+        # 添加日志摘要
         if [ -f lyrics_downloader.log ]; then
-          echo "## Log Summary" >> report.md
+          echo "## 📋 Log Summary (Last 50 Lines)" >> report.md
           echo '```' >> report.md
           tail -n 50 lyrics_downloader.log >> report.md
           echo '```' >> report.md
@@ -93,16 +121,21 @@ jobs:
     - name: Archive lyrics files
       if: steps.check_results.outputs.lyric_count > 0
       run: |
-        cd ${{ github.workspace }}
-        # 创建带时间戳的压缩包
         TIMESTAMP=$(date -u '+%Y%m%d_%H%M%S')
-        zip -r lyrics_${TIMESTAMP}.zip lyrics/ -x "*.log"
+        ARCHIVE_NAME="lyrics_${TIMESTAMP}.zip"
         
-        # 同时创建一个最新版本的链接
-        cp lyrics_${TIMESTAMP}.zip lyrics_latest.zip
+        # 创建压缩包，排除日志文件
+        cd lyrics
+        zip -r ../$ARCHIVE_NAME . -x "*.log" "*.tmp"
+        cd ..
         
-        echo "📦 Created archive: lyrics_${TIMESTAMP}.zip"
-        ls -lh lyrics_*.zip
+        # 计算压缩包 SHA256
+        SHA256=$(sha256sum $ARCHIVE_NAME | cut -d' ' -f1)
+        echo "$SHA256  $ARCHIVE_NAME" > ${ARCHIVE_NAME}.sha256
+        
+        echo "📦 Created archive: $ARCHIVE_NAME"
+        echo "🔐 SHA256: $SHA256"
+        ls -lh $ARCHIVE_NAME
 
     - name: Upload lyrics artifact
       if: steps.check_results.outputs.lyric_count > 0
@@ -111,67 +144,137 @@ jobs:
         name: lyrics-${{ github.run_number }}
         path: |
           lyrics_*.zip
+          lyrics_*.sha256
           report.md
         retention-days: 30
         compression-level: 9
+        if-no-files-found: warn
+
+    - name: Upload lyrics directory
+      if: steps.check_results.outputs.lyric_count > 0
+      uses: actions/upload-artifact@v4
+      with:
+        name: lyrics-raw-${{ github.run_number }}
+        path: lyrics/
+        retention-days: 7
+        if-no-files-found: warn
 
     - name: Upload log file
       if: always()
       uses: actions/upload-artifact@v4
       with:
         name: logs-${{ github.run_number }}
-        path: lyrics_downloader.log
+        path: |
+          lyrics_downloader.log
+          api_response_*.json
         retention-days: 7
-
-    - name: Create release (optional)
-      if: steps.check_results.outputs.lyric_count > 0 && github.event_name == 'workflow_dispatch'
-      uses: softprops/action-gh-release@v1
-      with:
-        tag_name: lyrics-${{ github.run_number }}
-        name: Lyrics Collection ${{ github.run_number }}
-        body_path: report.md
-        files: lyrics_latest.zip
-        draft: false
-        prerelease: false
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      continue-on-error: true
+        if-no-files-found: ignore
 
     - name: Cleanup old artifacts
       uses: actions/github-script@v7
-      if: always()
+      if: success()
       with:
         script: |
-          const artifacts = await github.rest.actions.listArtifactsForRepo({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-          });
+          const daysToKeep = 30;
+          const maxArtifacts = 10;
+          const cutoffDate = new Date();
+          cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
           
-          // 保留最新的 10 个 artifacts
-          const sortedArtifacts = artifacts.data.artifacts
-            .filter(artifact => artifact.name.startsWith('lyrics-'))
-            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-          
-          for (let i = 10; i < sortedArtifacts.length; i++) {
-            console.log(`Deleting old artifact: ${sortedArtifacts[i].name}`);
-            await github.rest.actions.deleteArtifact({
+          try {
+            const artifacts = await github.rest.actions.listArtifactsForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              artifact_id: sortedArtifacts[i].id,
+              per_page: 100
             });
+            
+            // 按类型分组
+            const lyricsArtifacts = artifacts.data.artifacts
+              .filter(a => a.name.startsWith('lyrics-'))
+              .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            
+            const logsArtifacts = artifacts.data.artifacts
+              .filter(a => a.name.startsWith('logs-'))
+              .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            
+            // 删除超过保留数量的 artifacts
+            for (const [type, list] of [['lyrics', lyricsArtifacts], ['logs', logsArtifacts]]) {
+              for (let i = maxArtifacts; i < list.length; i++) {
+                const artifact = list[i];
+                const createdAt = new Date(artifact.created_at);
+                
+                if (createdAt < cutoffDate) {
+                  console.log(`Deleting old ${type} artifact: ${artifact.name} (created: ${artifact.created_at})`);
+                  try {
+                    await github.rest.actions.deleteArtifact({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      artifact_id: artifact.id,
+                    });
+                  } catch (error) {
+                    console.error(`Failed to delete artifact ${artifact.name}: ${error.message}`);
+                  }
+                }
+              }
+            }
+            
+            console.log(`✓ Cleanup completed`);
+          } catch (error) {
+            console.error(`Cleanup failed: ${error.message}`);
           }
       continue-on-error: true
 
-    - name: Summary
+    - name: Generate workflow summary
       if: always()
       run: |
         echo "## 🎵 Lyrics Download Summary" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "- **Total files**: ${{ steps.check_results.outputs.lyric_count }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Status**: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Duration**: ${{ job.duration }}s" >> $GITHUB_STEP_SUMMARY
+        
+        # 状态徽章
+        if [ "${{ job.status }}" == "success" ]; then
+          echo "![Status](https://img.shields.io/badge/Status-Success-brightgreen)" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "![Status](https://img.shields.io/badge/Status-Failed-red)" >> $GITHUB_STEP_SUMMARY
+        fi
         echo "" >> $GITHUB_STEP_SUMMARY
         
+        # 基本信息
+        echo "### 📋 Basic Information" >> $GITHUB_STEP_SUMMARY
+        echo "| Item | Value |" >> $GITHUB_STEP_SUMMARY
+        echo "|------|-------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Run Number | #${{ github.run_number }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Triggered By | ${{ github.event_name }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Status | ${{ job.status }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Total Files | ${{ steps.check_results.outputs.lyric_count }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Total Size | ${{ steps.check_results.outputs.total_size }} |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # 配置信息
+        echo "### ⚙️ Configuration" >> $GITHUB_STEP_SUMMARY
+        echo "| Parameter | Value |" >> $GITHUB_STEP_SUMMARY
+        echo "|-----------|-------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Max Retries | ${{ github.event.inputs.max_retries || '3' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Rate Limit | ${{ github.event.inputs.rate_limit_delay || '0.5' }}s |" >> $GITHUB_STEP_SUMMARY
+        echo "| Timeout | ${{ github.event.inputs.timeout_minutes || '30' }}min |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # 添加完整报告
         if [ -f report.md ]; then
+          echo "### 📊 Detailed Report" >> $GITHUB_STEP_SUMMARY
           cat report.md >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        # 下载链接
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📥 Downloads" >> $GITHUB_STEP_SUMMARY
+        echo "Artifacts are available in the workflow run artifacts section above." >> $GITHUB_STEP_SUMMARY
+
+    - name: Notify on failure
+      if: failure()
+      run: |
+        echo "::error::Lyrics download workflow failed. Check the logs for details."
+        
+        if [ -f lyrics_downloader.log ]; then
+          echo "::group::Last 20 log lines"
+          tail -n 20 lyrics_downloader.log
+          echo "::endgroup::"
         fi
