@@ -1,8 +1,7 @@
-name: Test
+name: Download text test
 
 on:
-  watch:
-    types: [started]
+  workflow_dispatch:
    
 jobs:
   build:
